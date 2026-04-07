@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOR BUS TRACKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════ */
+:root {
+  --bg:       #07090f;
+  --s1:       #0e1220;
+  --s2:       #141a2e;
+  --border:   #1e2a45;
+  --green:    #00e5a0;
+  --green2:   #00b37a;
+  --orange:   #ff9f43;
+  --blue:     #4fc3f7;
+  --red:      #ff5370;
+  --yellow:   #ffd32a;
+  --muted:    #3a4a6a;
+  --text:     #c8d8f0;
+  --white:    #ffffff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════
+   BACKGROUND GRID
+══════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ══════════════════════════════════════
+   HEADER
+══════════════════════════════════════ */
+.app-header {
+  position: relative; z-index: 10;
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,9,15,0.95);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.app-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: 0 0 30px rgba(0,229,160,0.5), 0 0 60px rgba(0,229,160,0.2);
+  margin-bottom: 2px;
+}
+
+.app-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+#clock {
+  font-family: 'Orbitron', monospace;
+  font-size: 38px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 6px;
+  font-variant-numeric: tabular-nums;
+  margin: 10px 0 6px;
+  text-shadow: 0 0 20px rgba(255,255,255,0.15);
+}
+
+.svc-badge {
+  display: inline-block;
+  padding: 4px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.svc-open   { background: rgba(0,229,160,0.1);  color: var(--green);  border: 1px solid rgba(0,229,160,0.3); }
+.svc-closed { background: rgba(255,83,112,0.1); color: var(--red);    border: 1px solid rgba(255,83,112,0.3); }
+
+/* ══════════════════════════════════════
+   MAIN CONTENT
+══════════════════════════════════════ */
+.main { position: relative; z-index: 5; padding: 16px 14px 60px; max-width: 820px; margin: 0 auto; }
+
+/* ══════════════════════════════════════
+   SECTION LABEL
+══════════════════════════════════════ */
+.sec-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  padding-right: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ══════════════════════════════════════
+   NOTIF BAR
+══════════════════════════════════════ */
+.notif-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.notif-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-family: 'Cairo', sans-serif;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.notif-btn:hover     { border-color: var(--green); color: var(--green); }
+.notif-btn.on        { border-color: var(--green); color: var(--green); background: rgba(0,229,160,0.08); }
+.notif-btn.off-deny  { border-color: var(--red);   color: var(--red);   cursor: not-allowed; }
+
+.alert-sel {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--muted);
+}
+.alert-sel select {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: #fff;
+  padding: 4px 10px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════
+   LINE MAP
+══════════════════════════════════════ */
+.map-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px 16px 16px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+
+.map-inner {
+  min-width: 560px;
+  position: relative;
+  padding: 0 28px;
+}
+
+.map-line {
+  position: absolute;
+  top: 36px; left: 40px; right: 40px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.map-progress {
+  position: absolute; top: 0; left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--green2), var(--green));
+  border-radius: 2px;
+  transition: width 0.9s ease;
+}
+
+.map-stations {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+}
+
+.map-st {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex: 1;
+}
+
+.st-dot {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: #0c1220;
+  font-size: 15px; font-weight: 900;
+  color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.4s;
+  position: relative;
+  cursor: default;
+}
+
+/* pulse ring for active */
+.st-dot.active::before {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  animation: ringpulse 1.6s infinite;
+  opacity: 0.6;
+}
+@keyframes ringpulse {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.st-dot.visited { background: #071a10; border-color: #0d3a22; color: #1a5e3a; }
+.st-dot.active  { background: var(--green2); border-color: var(--green); color: #001a0d;
+                   transform: scale(1.18);
+                   box-shadow: 0 0 24px rgba(0,229,160,0.7), 0 0 60px rgba(0,229,160,0.2); }
+.st-dot.next-st { border-color: var(--orange); color: var(--orange); animation: pnext 1.4s infinite; }
+@keyframes pnext {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,159,67,0.5); }
+  50%     { box-shadow: 0 0 0 10px rgba(255,159,67,0); }
+}
+
+.st-dot.stopped {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  animation: stopblink 1s infinite;
+}
+@keyframes stopblink {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,211,42,0.5); }
+  50%     { box-shadow: 0 0 0 10px rgba(255,211,42,0); }
+}
+
+.st-name {
+  font-size: 9.5px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 68px;
+  transition: color 0.3s;
+}
+.st-name.lit { color: var(--green); font-weight: 700; }
+
+/* direction label */
+.dir-label {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 10px;
+  padding: 5px 0;
+  letter-spacing: 0.5px;
+  transition: color 0.4s;
+}
+.dir-fwd  { color: var(--green); }
+.dir-bwd  { color: var(--orange); }
+.dir-stop { color: var(--yellow); }
+.dir-none { color: var(--muted); }
+
+/* ══════════════════════════════════════
+   INFO CARDS (2x2 grid)
+══════════════════════════════════════ */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.icard {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.icard::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 3px; height: 100%;
+  border-radius: 0 14px 14px 0;
+}
+.icard.c-green::before { background: var(--green); }
+.icard.c-orange::before { background: var(--orange); }
+.icard.c-blue::before { background: var(--blue); }
+.icard.c-yellow::before { background: var(--yellow); }
+
+.icard-title { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+.icard-val   { font-size: 18px; font-weight: 900; color: #fff; line-height: 1.2; }
+.icard.c-green  .icard-val { color: var(--green); }
+.icard.c-orange .icard-val { color: var(--orange); }
+.icard.c-blue   .icard-val { color: var(--blue); }
+.icard.c-yellow .icard-val { color: var(--yellow); }
+
+/* ══════════════════════════════════════
+   PROGRESS BAR
+══════════════════════════════════════ */
+.prog-wrap {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.prog-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.prog-bg   { background: #0c1525; border-radius: 6px; height: 7px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green2), var(--green)); transition: width 1s linear; }
+
+/* ══════════════════════════════════════
+   BUS CARDS GRID
+══════════════════════════════════════ */
+.buses-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.bus-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 12px 8px 10px;
+  text-align: center;
+  transition: all 0.35s;
+  position: relative;
+  overflow: hidden;
+}
+
+.bus-card.bc-active {
+  border-color: var(--green);
+  background: rgba(0,229,160,0.06);
+  box-shadow: 0 0 18px rgba(0,229,160,0.18);
+}
+.bus-card.bc-stopped {
+  border-color: var(--yellow);
+  background: rgba(255,211,42,0.05);
+  box-shadow: 0 0 14px rgba(255,211,42,0.12);
+}
+.bus-card.bc-past   { opacity: 0.3; }
+.bus-card.bc-future { opacity: 0.55; }
+
+.bc-icon  { font-size: 22px; margin-bottom: 4px; display: block; }
+.bc-num   { font-size: 13px; font-weight: 900; margin-bottom: 3px; }
+.bus-card.bc-active  .bc-num { color: var(--green); }
+.bus-card.bc-stopped .bc-num { color: var(--yellow); }
+
+.bc-time  { font-size: 10px; color: var(--muted); }
+.bc-where { font-size: 9.5px; color: var(--blue); margin-top: 3px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-status { font-size: 9px; font-weight: 700; margin-top: 4px; }
+.bus-card.bc-active  .bc-status { color: var(--green); }
+.bus-card.bc-stopped .bc-status { color: var(--yellow); }
+.bus-card.bc-future  .bc-status { color: var(--muted); }
+.bus-card.bc-past    .bc-status { color: var(--muted); }
+
+/* active bus glow strip top */
+.bus-card.bc-active::before,
+.bus-card.bc-stopped::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.bus-card.bc-active::before  { background: var(--green); }
+.bus-card.bc-stopped::before { background: var(--yellow); }
+
+/* ══════════════════════════════════════
+   LOG
+══════════════════════════════════════ */
+.log-list {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 7px;
+  max-height: 200px; overflow-y: auto;
+}
+.log-list::-webkit-scrollbar { width: 3px; }
+.log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.log-item {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-right: 3px solid var(--green);
+  border-radius: 10px;
+  padding: 9px 14px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px;
+  animation: slin 0.3s ease;
+}
+.log-item.lw { border-right-color: var(--orange); }
+.log-item.ly { border-right-color: var(--yellow); }
+@keyframes slin { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.log-time { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.log-msg  { flex: 1; color: #aabbcc; }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: var(--s2);
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 13px; color: #fff;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  transition: transform 0.4s cubic-bezier(.175,.885,.32,1.275), opacity 0.4s;
+  opacity: 0; z-index: 9999;
+  pointer-events: none; white-space: nowrap;
+  font-family: 'Cairo', sans-serif;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ══════════════════════════════════════
+   FOOTER
+══════════════════════════════════════ */
+.footer {
+  text-align: center;
+  padding: 18px;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+.footer span { color: var(--green); font-weight: 700; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 520px) {
+  .buses-grid { grid-template-columns: repeat(2,1fr); }
+  #clock { font-size: 30px; letter-spacing: 4px; }
+  .app-name { font-size: 17px; }
+  .icard-val { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="app-header">
+  <div class="app-name">FOR BUS TRACKER</div>
+  <div class="app-sub">نظام تتبع الحافلات البلدية</div>
+  <div id="clock">00:00:00</div>
+  <div class="svc-badge" id="svcBadge">جاري التحقق...</div>
+</header>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+
+  <!-- إشعارات -->
+  <div class="notif-row">
+    <button class="notif-btn" id="notifBtn" onclick="askNotif()">
+      🔔 <span id="notifTxt">تفعيل الإشعارات</span>
+    </button>
+    <div class="alert-sel">
+      <span>تنبيه قبل:</span>
+      <select id="alertBefore">
+        <option value="0">عند الوصول</option>
+        <option value="2" selected>دقيقتين</option>
+        <option value="3">3 دقائق</option>
+        <option value="5">5 دقائق</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- خريطة الخط -->
+  <div class="sec-label">خريطة الخط</div>
+  <div class="map-wrap">
+    <div class="map-inner">
+      <div class="map-line"><div class="map-progress" id="mapProg"></div></div>
+      <div class="map-stations" id="mapStations"></div>
+    </div>
+    <div class="dir-label dir-none" id="dirLabel">—</div>
+  </div>
+
+  <!-- بطاقات معلومات -->
+  <div class="sec-label">معلومات الرحلة</div>
+  <div class="info-grid">
+    <div class="icard c-green">
+      <div class="icard-title">📍 الموقع الحالي</div>
+      <div class="icard-val" id="iCur">—</div>
+    </div>
+    <div class="icard c-orange">
+      <div class="icard-title">⏭️ المحطة القادمة</div>
+      <div class="icard-val" id="iNext">—</div>
+    </div>
+    <div class="icard c-blue">
+      <div class="icard-title">⏱️ وقت الوصول</div>
+      <div class="icard-val" id="iArrAt">—</div>
+    </div>
+    <div class="icard c-yellow">
+      <div class="icard-title">🕒 يصل خلال</div>
+      <div class="icard-val" id="iArrIn">—</div>
+    </div>
+  </div>
+
+  <!-- شريط تقدم -->
+  <div class="prog-wrap">
+    <div class="prog-meta">
+      <span id="progLbl">تقدم الرحلة</span>
+      <span id="progPct">—</span>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- الحافلات الـ8 -->
+  <div class="sec-label">حالة الحافلات الـ 8</div>
+  <div class="buses-grid" id="busesGrid"></div>
+
+  <!-- سجل الإشعارات -->
+  <div class="sec-label" style="margin-top:6px">سجل الإشعارات</div>
+  <ul class="log-list" id="logList">
+    <li class="log-item" style="justify-content:center;color:var(--muted);border-right-color:var(--border)">
+      لا توجد إشعارات بعد
+    </li>
+  </ul>
+
+</main>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  By <span>OMAR MLW</span> — 2026 &nbsp;|&nbsp; FOR BUS TRACKER
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════
+   DATA
+════════════════════════════════════ */
+const STATIONS = [
+  "أولاد سنوسي",
+  "اللوزة",
+  "القدادرة",
+  "فرناكة",
+  "استيدية",
+  "اوريعة",
+  "محطة الحافلات"
+];
+const N = STATIONS.length; // 7
+
+// وقت الوصول لكل محطة من بداية الرحلة (ذهاب) بالدقائق
+const SCHED_FWD = [0, 10, 20, 30, 42, 51, 60];
+
+// إياب: المحطة 7→1، نفس الأوقات عكسياً
+// SCHED_FWD[i] = وقت المحطة (i) في الذهاب
+// في الإياب: محطة (6-i) تُزار عند SCHED_FWD[i]
+
+const TRIP   = 60;  // مدة الذهاب أو الإياب
+const STOP   = 15;  // توقف في نهاية الخط
+const CYCLE  = TRIP + STOP + TRIP; // 135 دقيقة
+
+const SVC_START = 6 * 60;   // 6:00 صباحاً
+const SVC_END   = 18 * 60;  // 18:00
+const INTERVAL  = 20;       // بين كل حافلة
+const NUM_BUSES = 8;
+
+// أوقات انطلاق كل حافلة (بالدقائق من منتصف الليل)
+const BUS_STARTS = Array.from({length: NUM_BUSES}, (_, i) => SVC_START + i * INTERVAL);
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let notifEnabled = false;
+let sentAlerts   = new Set();
+let lastStKey    = null;
+
+/* ════════════════════════════════════
+   BUILD UI — MAP STATIONS
+════════════════════════════════════ */
+const mapSt = document.getElementById("mapStations");
+for (let i = 0; i < N; i++) {
+  const wrap = document.createElement("div");
+  wrap.className = "map-st";
+
+  const dot = document.createElement("div");
+  dot.className = "st-dot";
+  dot.id = "dot-" + i;
+  dot.textContent = i + 1;
+
+  const nm = document.createElement("div");
+  nm.className = "st-name";
+  nm.id = "stname-" + i;
+  nm.textContent = STATIONS[i];
+
+  wrap.appendChild(dot);
+  wrap.appendChild(nm);
+  mapSt.appendChild(wrap);
+}
+
+/* ════════════════════════════════════
+   BUILD UI — BUS CARDS
+════════════════════════════════════ */
+const busesGrid = document.getElementById("busesGrid");
+for (let b = 0; b < NUM_BUSES; b++) {
+  const c = document.createElement("div");
+  c.className = "bus-card";
+  c.id = "bc-" + b;
+  c.innerHTML = `
+    <span class="bc-icon">🚌</span>
+    <div class="bc-num">حافلة ${b + 1}</div>
+    <div class="bc-time"  id="bct-${b}">—</div>
+    <div class="bc-where" id="bcw-${b}">—</div>
+    <div class="bc-status" id="bcs-${b}">—</div>
+  `;
+  busesGrid.appendChild(c);
+}
+
+/* ════════════════════════════════════
+   UTILS
+════════════════════════════════════ */
+const pad     = n => String(n).padStart(2, '0');
+const m2str   = m => pad(Math.floor(m/60)) + ':' + pad(Math.round(m%60));
+const fmtNow  = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const addMins = (d, m) => new Date(d.getTime() + m * 60000);
+
+/* ════════════════════════════════════
+   BUS STATE CALCULATOR
+   Returns phase + position for a bus
+   given its start time (mins from midnight)
+   and current time (mins from midnight).
+════════════════════════════════════ */
+function busState(startMins, curMins) {
+  const elapsed = curMins - startMins;
+
+  if (elapsed < 0) return { phase: 'future', elapsed };
+
+  // كم دورة أتمّت؟
+  const fullCycles = Math.floor(elapsed / CYCLE);
+  const inCycle    = elapsed % CYCLE;
+
+  // هل انتهت خدمتها؟ (لو وقت انطلاق الدورة الجديدة > 18:00)
+  const nextDepartureAbs = startMins + fullCycles * CYCLE;
+  if (nextDepartureAbs > SVC_END + TRIP) return { phase: 'done' };
+
+  if (inCycle <= TRIP) {
+    // ── ذهاب ──
+    const t = inCycle;
+    let si = 0;
+    for (let i = 0; i < SCHED_FWD.length; i++) {
+      if (t >= SCHED_FWD[i]) si = i;
+    }
+    let nextSi = null, minsToNext = null;
+    if (si < N - 1) {
+      nextSi     = si + 1;
+      minsToNext = SCHED_FWD[nextSi] - t;
+    }
+    return { phase: 'fwd', stIdx: si, nextIdx: nextSi, minsToNext, tripTime: t };
+
+  } else if (inCycle <= TRIP + STOP) {
+    // ── توقف في نهاية الخط ──
+    const remaining = TRIP + STOP - inCycle;
+    return { phase: 'stop', stIdx: N-1, nextIdx: N-2, minsToStop: remaining };
+
+  } else {
+    // ── إياب ──
+    const t = inCycle - TRIP - STOP; // 0..60
+    let si = 0;
+    for (let i = 0; i < SCHED_FWD.length; i++) {
+      if (t >= SCHED_FWD[i]) si = i;
+    }
+    const stIdx = (N - 1) - si; // عكس
+    let nextIdx = null, minsToNext = null;
+    if (stIdx > 0) {
+      nextIdx    = stIdx - 1;
+      const ni   = (N - 1) - nextIdx;
+      minsToNext = SCHED_FWD[ni] - t;
+    }
+    return { phase: 'bwd', stIdx, nextIdx, minsToNext, tripTime: t };
+  }
+}
+
+/* ════════════════════════════════════
+   NOTIFICATIONS
+════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+function addLog(msg, type="info") {
+  const list = document.getElementById("logList");
+  if (list.children[0]?.style.justifyContent === "center") list.innerHTML = "";
+  const li = document.createElement("li");
+  li.className = "log-item" + (type==="warn"?" lw": type==="stop"?" ly":"");
+  li.innerHTML = `
+    <span>${type==="warn"?"⏰": type==="stop"?"🟡":"✅"}</span>
+    <span class="log-msg">${msg}</span>
+    <span class="log-time">${fmtNow(new Date())}</span>
+  `;
+  list.prepend(li);
+  while (list.children.length > 12) list.removeChild(list.lastChild);
+}
+
+function sendNotif(title, body) {
+  if (!notifEnabled) return;
+  try { new Notification(title, { body, tag: title+body }); } catch(e) {}
+}
+
+function maybeAlert(key, title, body, logMsg, type="info") {
+  if (sentAlerts.has(key)) return;
+  sentAlerts.add(key);
+  sendNotif(title, body);
+  showToast("🔔 " + logMsg);
+  addLog(logMsg, type);
+}
+
+async function askNotif() {
+  if (!("Notification" in window)) { showToast("⚠️ متصفحك لا يدعم الإشعارات"); return; }
+  if (Notification.permission === "denied") { showToast("🚫 الإشعارات محظورة — فعّلها من إعدادات المتصفح"); return; }
+  updateNotifUI(await Notification.requestPermission());
+}
+
+function updateNotifUI(p) {
+  const btn = document.getElementById("notifBtn");
+  const txt = document.getElementById("notifTxt");
+  notifEnabled = p === "granted";
+  if (p === "granted") {
+    btn.className = "notif-btn on";
+    txt.textContent = "الإشعارات مفعّلة ✓";
+    showToast("🔔 ستصلك إشعارات عند وصول الحافلة!");
+  } else if (p === "denied") {
+    btn.className = "notif-btn off-deny";
+    txt.textContent = "الإشعارات محظورة";
+  }
+}
+
+/* ════════════════════════════════════
+   MAIN UPDATE LOOP
+════════════════════════════════════ */
+function update() {
+  const now  = new Date();
+  const curM = now.getHours() * 60 + now.getMinutes() + now.getSeconds()/60;
+
+  // ساعة
+  document.getElementById("clock").textContent =
+    pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
+  // حالة الخدمة
+  const inSvc = curM >= SVC_START && curM <= SVC_END + TRIP;
+  const svcEl = document.getElementById("svcBadge");
+  if (curM < SVC_START) {
+    svcEl.className = "svc-badge svc-closed";
+    svcEl.textContent = `الخدمة تبدأ الساعة ${m2str(SVC_START)}`;
+  } else if (!inSvc) {
+    svcEl.className = "svc-badge svc-closed";
+    svcEl.textContent = "انتهت الخدمة لهذا اليوم";
+  } else {
+    svcEl.className = "svc-badge svc-open";
+    svcEl.textContent = `الخدمة متاحة ⬤ حتى ${m2str(SVC_END)}`;
+  }
+
+  const alertBefore = parseInt(document.getElementById("alertBefore").value);
+  const dayKey = now.toDateString();
+
+  // ── حالة كل حافلة ──
+  let focusBusIdx = -1;
+  let focusState  = null;
+
+  // الحافلة "المحورية" = أول حافلة نشطة الآن
+  for (let b = 0; b < NUM_BUSES; b++) {
+    const s = busState(BUS_STARTS[b], curM);
+    const card   = document.getElementById("bc-" + b);
+    const tEl    = document.getElementById("bct-" + b);
+    const wEl    = document.getElementById("bcw-" + b);
+    const sEl    = document.getElementById("bcs-" + b);
+
+    card.className = "bus-card";
+
+    if (s.phase === 'future') {
+      card.classList.add("bc-future");
+      tEl.textContent = m2str(BUS_STARTS[b]);
+      wEl.textContent = "لم تنطلق بعد";
+      sEl.textContent = "قادمة";
+    } else if (s.phase === 'done') {
+      card.classList.add("bc-past");
+      tEl.textContent = "انتهت";
+      wEl.textContent = "—";
+      sEl.textContent = "أنهت رحلتها";
+    } else if (s.phase === 'stop') {
+      card.classList.add("bc-stopped");
+      tEl.textContent = "⏸ توقف";
+      wEl.textContent = STATIONS[N-1];
+      sEl.textContent = `${Math.ceil(s.minsToStop)} د للإياب`;
+      if (focusBusIdx < 0) { focusBusIdx = b; focusState = s; }
+
+      // إشعار توقف
+      const stopKey = `stop-${b}-${dayKey}-${Math.floor((curM - BUS_STARTS[b]) / CYCLE)}`;
+      maybeAlert(stopKey,
+        `⏸ حافلة ${b+1} — توقف في المحطة الأخيرة`,
+        `ستعود خلال ${Math.ceil(s.minsToStop)} دقيقة`,
+        `الحافلة ${b+1} توقفت في محطة الحافلات — تعود خلال ${Math.ceil(s.minsToStop)} دقيقة`,
+        "stop");
+
+    } else {
+      // نشطة (fwd أو bwd)
+      card.classList.add("bc-active");
+      const dirTxt = s.phase === 'fwd' ? "ذهاب ▶" : "◀ إياب";
+      tEl.textContent = dirTxt;
+      wEl.textContent = STATIONS[s.stIdx];
+      sEl.textContent = s.nextIdx !== null
+        ? `→ ${STATIONS[s.nextIdx]}`
+        : "وصلت ✓";
+      if (focusBusIdx < 0) { focusBusIdx = b; focusState = s; }
+
+      // إشعارات الوصول
+      const cycleNum = Math.floor((curM - BUS_STARTS[b]) / CYCLE);
+      const arrKey = `arr-${b}-${s.phase}-${s.stIdx}-${cycleNum}-${dayKey}`;
+      maybeAlert(arrKey,
+        `🚌 حافلة ${b+1} — ${STATIONS[s.stIdx]}`,
+        `${s.phase==='fwd'?'ذهاب':'إياب'} — المحطة ${s.stIdx+1} من 7`,
+        `الحافلة ${b+1} وصلت إلى ${STATIONS[s.stIdx]}`
+      );
+
+      // إشعار مسبق
+      if (alertBefore > 0 && s.nextIdx !== null && s.minsToNext <= alertBefore && s.minsToNext > 0) {
+        const preKey = `pre-${b}-${s.phase}-${s.nextIdx}-${cycleNum}-${dayKey}`;
+        const mins = Math.ceil(s.minsToNext);
+        maybeAlert(preKey,
+          `⏰ خلال ${mins} دقيقة — ${STATIONS[s.nextIdx]}`,
+          `الحافلة ${b+1} قادمة`,
+          `الحافلة ${b+1} ستصل إلى ${STATIONS[s.nextIdx]} خلال ${mins} دقيقة`,
+          "warn"
+        );
+      }
+    }
+  }
+
+  // ── خريطة الخط: تعرض الحافلة المحورية ──
+  if (!focusState || !inSvc) {
+    // لا توجد حافلة نشطة
+    for (let i = 0; i < N; i++) {
+      document.getElementById("dot-" + i).className = "st-dot";
+      document.getElementById("stname-" + i).className = "st-name";
+    }
+    document.getElementById("mapProg").style.width = "0%";
+    document.getElementById("dirLabel").textContent = "لا توجد حافلة نشطة الآن";
+    document.getElementById("dirLabel").className = "dir-label dir-none";
+    document.getElementById("iCur").textContent   = "—";
+    document.getElementById("iNext").textContent  = "—";
+    document.getElementById("iArrAt").textContent = "—";
+    document.getElementById("iArrIn").textContent = "—";
+    document.getElementById("progFill").style.width = "0%";
+    document.getElementById("progLbl").textContent  = "لا توجد رحلة";
+    document.getElementById("progPct").textContent  = "—";
+    return;
+  }
+
+  const fs = focusState;
+
+  // محطات
+  for (let i = 0; i < N; i++) {
+    const dot = document.getElementById("dot-" + i);
+    const nm  = document.getElementById("stname-" + i);
+    dot.className = "st-dot";
+    nm.className  = "st-name";
+
+    if (fs.phase === 'stop') {
+      if (i === N-1) { dot.classList.add("stopped"); nm.classList.add("lit"); }
+    } else if (fs.phase === 'fwd') {
+      if (i < fs.stIdx)         dot.classList.add("visited");
+      else if (i === fs.stIdx)  { dot.classList.add("active"); nm.classList.add("lit"); }
+      else if (i === fs.nextIdx) dot.classList.add("next-st");
+    } else { // bwd
+      if (i > fs.stIdx)         dot.classList.add("visited");
+      else if (i === fs.stIdx)  { dot.classList.add("active"); nm.classList.add("lit"); }
+      else if (i === fs.nextIdx) dot.classList.add("next-st");
+    }
+  }
+
+  // شريط التقدم على الخط
+  const frac = fs.stIdx / (N - 1);
+  document.getElementById("mapProg").style.width = (frac * 100) + "%";
+
+  // اتجاه
+  const dirEl = document.getElementById("dirLabel");
+  if (fs.phase === 'stop') {
+    dirEl.textContent = `🟡 حافلة ${focusBusIdx+1} — توقف في محطة الحافلات (${Math.ceil(fs.minsToStop)} د)`;
+    dirEl.className = "dir-label dir-stop";
+  } else if (fs.phase === 'fwd') {
+    dirEl.textContent = `🟢 حافلة ${focusBusIdx+1} — ذهاب: ${STATIONS[0]} ← ${STATIONS[N-1]} ▶`;
+    dirEl.className = "dir-label dir-fwd";
+  } else {
+    dirEl.textContent = `🟠 حافلة ${focusBusIdx+1} — إياب: ${STATIONS[N-1]} ← ${STATIONS[0]} ◀`;
+    dirEl.className = "dir-label dir-bwd";
+  }
+
+  // بطاقات
+  document.getElementById("iCur").textContent = STATIONS[fs.stIdx];
+
+  if (fs.phase === 'stop') {
+    document.getElementById("iNext").textContent  = STATIONS[N-2] + " (إياب)";
+    document.getElementById("iArrIn").textContent = Math.ceil(fs.minsToStop) + " د";
+    document.getElementById("iArrAt").textContent = fmtNow(addMins(now, fs.minsToStop));
+  } else if (fs.nextIdx !== null) {
+    document.getElementById("iNext").textContent  = STATIONS[fs.nextIdx];
+    const mins = Math.max(0, Math.ceil(fs.minsToNext));
+    document.getElementById("iArrIn").textContent = mins + " دقيقة";
+    document.getElementById("iArrAt").textContent = fmtNow(addMins(now, fs.minsToNext));
+  } else {
+    document.getElementById("iNext").textContent  = "وصلنا! 🎉";
+    document.getElementById("iArrIn").textContent = "—";
+    document.getElementById("iArrAt").textContent = "—";
+  }
+
+  // شريط تقدم الرحلة
+  const tripT = (fs.phase === 'bwd') ? fs.tripTime : (fs.phase === 'fwd' ? fs.tripTime : TRIP);
+  const pct = Math.min(100, Math.round((tripT / TRIP) * 100));
+  document.getElementById("progFill").style.width = pct + "%";
+  document.getElementById("progPct").textContent  = pct + "%";
+  document.getElementById("progLbl").textContent  =
+    fs.phase === 'fwd' ? "تقدم رحلة الذهاب" :
+    fs.phase === 'bwd' ? "تقدم رحلة الإياب" :
+    "الحافلة في التوقف";
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+if (Notification.permission === "granted") updateNotifUI("granted");
+else if (Notification.permission === "denied") updateNotifUI("denied");
+
+setInterval(update, 1000);
+update();
+</script>
+</body>
+</html>
